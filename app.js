@@ -4,8 +4,7 @@ const dotenv = require('dotenv');
 
 const authRoutes = require('./routes/authRoutes');
 const smoothieRoutes = require('./routes/smoothieRoutes');
-const addressRoutes = require('./routes/addressRoutes');
-const favoriteRoutes = require('./routes/favoriteRoutes');
+const addressRoutes = require('./routeavoriteRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const profileRoutes = require('./routes/profileRoutes');

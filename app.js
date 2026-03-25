@@ -4,10 +4,12 @@ const dotenv = require('dotenv');
 
 const authRoutes = require('./routes/authRoutes');
 const smoothieRoutes = require('./routes/smoothieRoutes');
-const addressRoutes = require('./routeavoriteRoutes');
+const addressRoutes = require('./routes/addressRoutes');
+const favoriteRoutes = require('./routes/favoriteRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const deviceRoutes = require('./routes/deviceRoutes');
 
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -21,7 +23,7 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'Pure Blend Smoothie App API is running'
+    message: 'Pure Blend Smoothie App API is running',
   });
 });
 
@@ -32,6 +34,7 @@ app.use('/api/favorites', favoriteRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/devices', deviceRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

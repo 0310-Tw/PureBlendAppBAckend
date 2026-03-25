@@ -2,7 +2,8 @@ const express = require('express');
 const {
   createOrder,
   fetchOrders,
-  fetchOrderById
+  fetchOrderById,
+  patchOrderStatus,
 } = require('../controllers/orderController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -13,5 +14,6 @@ router.use(protect);
 router.post('/', createOrder);
 router.get('/', fetchOrders);
 router.get('/:id', fetchOrderById);
+router.patch('/:id/status', patchOrderStatus);
 
 module.exports = router;

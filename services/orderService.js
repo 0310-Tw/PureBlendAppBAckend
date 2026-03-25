@@ -1,4 +1,6 @@
 const pool = require('../config/db');
+const sendPushNotification = require('../helpers/sendPushNotification');
+const { getUserDeviceTokens } = require('./deviceService');
 
 const getAddressByIdAndUserId = async (addressId, userId) => {
   const [rows] = await pool.query(
@@ -70,7 +72,7 @@ const createOrderFromCart = async (userId, orderData) => {
     fulfillment_type,
     payment_method,
     address_id,
-    order_notes
+    order_notes,
   } = orderData;
 
   const cartItems = await getCartItemsByUserId(userId);
@@ -100,7 +102,7 @@ const createOrderFromCart = async (userId, orderData) => {
   }
 
   const subtotal = calculateCartSubtotal(cartItems);
-  const delivery_fee = fulfillment_type === 'delivery' ? 300.00 : 0.00;
+  const delivery_fee = fulfillment_type === 'delivery' ? 300.0 : 0.0;
   const total_amount = subtotal + delivery_fee;
   const order_number = generateOrderNumber();
 
@@ -135,7 +137,7 @@ const createOrderFromCart = async (userId, orderData) => {
         subtotal,
         delivery_fee,
         total_amount,
-        'pending'
+        'pending',
       ]
     );
 
@@ -166,7 +168,7 @@ const createOrderFromCart = async (userId, orderData) => {
           item.quantity,
           item.unit_price,
           line_total,
-          item.notes || null
+          item.notes || null,
         ]
       );
     }
@@ -182,7 +184,6 @@ const createOrderFromCart = async (userId, orderData) => {
     await connection.commit();
 
     const order = await getOrderByIdAndUserId(orderId, userId);
-
     return order;
   } catch (error) {
     await connection.rollback();
@@ -298,10 +299,74 @@ const getOrderByIdAndUserId = async (orderId, userId) => {
   return order;
 };
 
+const getOrderById = async (orderId) => {
+  const [rows] = await pool.query(
+    `
+    SELECT
+      id,
+      order_number,
+      user_id,
+      fulfillment_type,
+      status
+    FROM orders
+    WHERE id = ?
+    LIMIT 1
+    `,
+    [orderId]
+  );
+
+  return rows[0] || null;
+};
+
+const updateOrderStatus = async (orderId, status) => {
+  await pool.query(
+    `
+    UPDATE orders
+    SET status = ?
+    WHERE id = ?
+    `,
+    [status, orderId]
+  );
+
+  const order = await getOrderById(orderId);
+
+  if (!order) {
+    return null;
+  }
+
+  if (status === 'ready') {
+    const tokens = await getUserDeviceTokens(order.user_id);
+
+    for (const token of tokens) {
+      try {
+        await sendPushNotification({
+          token,
+          title: 'Pure Blend Smoothie App',
+          body: order.fulfillment_type === 'pickup'
+            ? 'Your order is ready for pickup.'
+            : 'Your order is ready.',
+          data: {
+            order_id: order.id,
+            order_number: order.order_number,
+            status: order.status,
+            fulfillment_type: order.fulfillment_type,
+          },
+        });
+      } catch (error) {
+        console.error(`Failed to send notification to token ${token}:`, error.message);
+      }
+    }
+  }
+
+  return order;
+};
+
 module.exports = {
   getAddressByIdAndUserId,
   getCartItemsByUserId,
   createOrderFromCart,
   getOrdersByUserId,
-  getOrderByIdAndUserId
+  getOrderByIdAndUserId,
+  getOrderById,
+  updateOrderStatus,
 };

@@ -2,7 +2,9 @@ const { body, validationResult } = require('express-validator');
 const {
   createOrderFromCart,
   getOrdersByUserId,
-  getOrderByIdAndUserId
+  getOrderByIdAndUserId,
+  getOrderById,
+  updateOrderStatus,
 } = require('../services/orderService');
 
 const createOrder = async (req, res, next) => {
@@ -32,7 +34,7 @@ const createOrder = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
-        errors: errors.array()
+        errors: errors.array(),
       });
     }
 
@@ -41,14 +43,14 @@ const createOrder = async (req, res, next) => {
     if (fulfillment_type === 'delivery' && payment_method === 'pay_at_pickup') {
       return res.status(400).json({
         success: false,
-        message: 'pay_at_pickup cannot be used for delivery orders'
+        message: 'pay_at_pickup cannot be used for delivery orders',
       });
     }
 
     if (fulfillment_type === 'pickup' && payment_method === 'cash_on_delivery') {
       return res.status(400).json({
         success: false,
-        message: 'cash_on_delivery cannot be used for pickup orders'
+        message: 'cash_on_delivery cannot be used for pickup orders',
       });
     }
 
@@ -57,13 +59,13 @@ const createOrder = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: 'Order created successfully',
-      data: order
+      data: order,
     });
   } catch (error) {
     if (error.statusCode) {
       return res.status(error.statusCode).json({
         success: false,
-        message: error.message
+        message: error.message,
       });
     }
 
@@ -78,7 +80,7 @@ const fetchOrders = async (req, res, next) => {
     res.status(200).json({
       success: true,
       count: orders.length,
-      data: orders
+      data: orders,
     });
   } catch (error) {
     next(error);
@@ -94,13 +96,62 @@ const fetchOrderById = async (req, res, next) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found'
+        message: 'Order not found',
       });
     }
 
     res.status(200).json({
       success: true,
-      data: order
+      data: order,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const patchOrderStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    await body('status')
+      .notEmpty()
+      .withMessage('status is required')
+      .isIn([
+        'pending',
+        'confirmed',
+        'preparing',
+        'ready',
+        'out_for_delivery',
+        'completed',
+        'cancelled',
+      ])
+      .withMessage('Invalid status value')
+      .run(req);
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+
+    const existingOrder = await getOrderById(id);
+
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    const updatedOrder = await updateOrderStatus(id, req.body.status);
+
+    res.status(200).json({
+      success: true,
+      message: 'Order status updated successfully',
+      data: updatedOrder,
     });
   } catch (error) {
     next(error);
@@ -110,5 +161,6 @@ const fetchOrderById = async (req, res, next) => {
 module.exports = {
   createOrder,
   fetchOrders,
-  fetchOrderById
+  fetchOrderById,
+  patchOrderStatus,
 };

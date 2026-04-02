@@ -10,6 +10,7 @@ const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const deviceRoutes = require('./routes/deviceRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -35,6 +36,7 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -5,6 +5,7 @@ const {
   getOrderByIdAndUserId,
   getOrderById,
   updateOrderStatus,
+  getAllOrders,
 } = require('../services/orderService');
 
 const createOrder = async (req, res, next) => {
@@ -76,6 +77,20 @@ const createOrder = async (req, res, next) => {
 const fetchOrders = async (req, res, next) => {
   try {
     const orders = await getOrdersByUserId(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: orders,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const fetchAllOrders = async (req, res, next) => {
+  try {
+    const orders = await getAllOrders();
 
     res.status(200).json({
       success: true,
@@ -161,6 +176,7 @@ const patchOrderStatus = async (req, res, next) => {
 module.exports = {
   createOrder,
   fetchOrders,
+  fetchAllOrders,
   fetchOrderById,
   patchOrderStatus,
 };

@@ -236,6 +236,54 @@ const getOrdersByUserId = async (userId) => {
   return rows;
 };
 
+const getAllOrders = async () => {
+  const [rows] = await pool.query(
+    `
+    SELECT
+      o.id,
+      o.order_number,
+      o.user_id,
+      u.full_name AS customer_name,
+      u.email,
+      u.phone,
+      o.address_id,
+      o.fulfillment_type,
+      o.payment_method,
+      o.order_notes,
+      o.subtotal,
+      o.delivery_fee,
+      o.total_amount,
+      o.status,
+      o.created_at,
+      o.updated_at,
+      COUNT(oi.id) AS item_count
+    FROM orders o
+    INNER JOIN users u ON u.id = o.user_id
+    LEFT JOIN order_items oi ON o.id = oi.order_id
+    GROUP BY
+      o.id,
+      o.order_number,
+      o.user_id,
+      u.full_name,
+      u.email,
+      u.phone,
+      o.address_id,
+      o.fulfillment_type,
+      o.payment_method,
+      o.order_notes,
+      o.subtotal,
+      o.delivery_fee,
+      o.total_amount,
+      o.status,
+      o.created_at,
+      o.updated_at
+    ORDER BY o.created_at DESC, o.id DESC
+    `
+  );
+
+  return rows;
+};
+
 const getOrderByIdAndUserId = async (orderId, userId) => {
   const [orderRows] = await pool.query(
     `
@@ -366,6 +414,7 @@ module.exports = {
   getCartItemsByUserId,
   createOrderFromCart,
   getOrdersByUserId,
+  getAllOrders,
   getOrderByIdAndUserId,
   getOrderById,
   updateOrderStatus,
